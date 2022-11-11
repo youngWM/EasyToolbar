@@ -6,44 +6,20 @@ task androidSourcesJar(type: Jar) {
     from android.sourceSets.main.java.source
 }
 
-//ext["signing.keyId"] = signing.keyId
-//ext["signing.password"] = signing.password
-//ext["signing.secretKeyRingFile"] = signing.secretKeyRingFile
-//ext["ossrhUsername"] = NEXUS_USERNAME
-//ext["ossrhPassword"] = NEXUS_PASSWORD
 
-File secretPropsFile = project.rootProject.file('gradle.properties')
-if (secretPropsFile.exists()) {
-    println "Found secret props file, loading props"
-    Properties p = new Properties()
-    p.load(new FileInputStream(secretPropsFile))
-    p.each { name, value ->
-        ext[name] = value
-    }
-} else {
-    println "No props file, loading env vars"
-}
-
-File secretPropsFile2 = project.rootProject.file('local.properties')
-if (secretPropsFile2.exists()) {
-    println "Found secret props file, loading props"
-    Properties p = new Properties()
-    p.load(new FileInputStream(secretPropsFile))
-    p.each { name, value ->
-        ext[name] = value
-    }
-} else {
-    println "No props file, loading env vars"
-}
+// 加载配置信息 properties
+def properties = new Properties()
+def inputStream = project.rootProject.file('local.properties').newDataInputStream()
+properties.load( inputStream )
 
 publishing {
     publications {
         release(MavenPublication) {
             // The coordinates of the library, being set from variables that
             // we'll set up in a moment
-            groupId GROUP
-            artifactId POM_ARTIFACT_ID
-            version VERSION_NAME
+            groupId  properties.getProperty('POM_GROUP_ID')
+            artifactId  properties.getProperty('POM_ARTIFACT_ID')
+            version  properties.getProperty('POM_VERSION_NAME')
 
             // Two artifacts, the `aar` and the sources
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
@@ -51,30 +27,30 @@ publishing {
 
             // Self-explanatory metadata for the most part
             pom {
-                name = POM_ARTIFACT_ID
-                description = POM_DESCRIPTION
+                name =  properties.getProperty('POM_ARTIFACT_ID')
+                description =  properties.getProperty('POM_DESCRIPTION')
                 // If your project has a dedicated site, use its URL here
-                url = POM_URL
+                url =  properties.getProperty('POM_URL')
                 licenses {
                     license {
                         //协议类型，一般默认Apache License2.0的话不用改：
-                        name = POM_LICENCE_NAME
-                        url = POM_LICENCE_URL
+                        name =  properties.getProperty('POM_LICENCE_NAME')
+                        url =  properties.getProperty('POM_LICENCE_URL')
                     }
                 }
                 developers {
                     developer {
-                        id = POM_DEVELOPER_ID
-                        name = POM_DEVELOPER_NAME
-                        email = POM_DEVELOPER_EMAIL
+                        id =  properties.getProperty('POM_DEVELOPER_ID')
+                        name =  properties.getProperty('POM_DEVELOPER_NAME')
+                        email =  properties.getProperty('POM_DEVELOPER_EMAIL')
                     }
                 }
                 // Version control info, if you're using GitHub, follow the format as seen here
                 scm {
                     //修改成你的Git地址：
-                    url = POM_SCM_URL
-                    connection = POM_SCM_CONNECTION
-                    developerConnection = POM_SCM_DEV_CONNECTION
+                    url =  properties.getProperty('POM_SCM_URL')
+                    connection =  properties.getProperty('POM_SCM_CONNECTION')
+                    developerConnection =  properties.getProperty('POM_SCM_DEV_CONNECTION')
                 }
                 // A slightly hacky fix so that your POM will include any transitive dependencies
                 // that your library builds upon
@@ -96,18 +72,18 @@ publishing {
         maven {
             // This is an arbitrary name, you may also use "mavencentral" or
             // any other name that's descriptive for you
-            name = POM_ARTIFACT_ID
+            name =  properties.getProperty('POM_ARTIFACT_ID')
 
-            def releasesRepoUrl = RELEASE_REPOSITORY_URL
-            def snapshotsRepoUrl = SNAPSHOT_REPOSITORY_URL
+            def releasesRepoUrl =  properties.getProperty('RELEASE_REPOSITORY_URL')
+            def snapshotsRepoUrl =  properties.getProperty('SNAPSHOT_REPOSITORY_URL')
             // You only need this if you want to publish snapshots, otherwise just set the URL
             // to the release repo directly
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
 
             // The username and password we've fetched earlier
             credentials {
-                username NEXUS_USERNAME
-                password NEXUS_PASSWORD
+                username  NEXUS_USERNAME
+                password  NEXUS_PASSWORD
             }
         }
     }
